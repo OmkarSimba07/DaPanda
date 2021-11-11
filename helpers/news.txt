@@ -1,0 +1,16 @@
+```fix
+> 🔝 Updated Top.gg
+• Redesigned the overview on top.gg for better quality
+
+> 🤖 Updated Discord.bots.gg
+• Redesigned the overview on discord.bots.gg for better quality
+
+> ❓ Help menu updated
+• The whole help command has been redesigned
+
+> 🛠️ Improved utility module
+• Improved old command and added new ones
+
+> 🎶 Improved music module
+• The bot now fully supports Spotify and SoundClound
+```
