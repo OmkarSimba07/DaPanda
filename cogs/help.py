@@ -6,6 +6,7 @@ import time
 
 from discord.ext import commands
 from helpers import paginator
+from helpers import helper
 from .utils import time as time_
 
 def setup(bot):
@@ -18,9 +19,10 @@ with open('/root/bot/helpers/news.txt') as f:
 class Invites(discord.ui.View):
     def __init__(self ,ctx: commands.Context):
         super().__init__()
+        self.add_item(discord.ui.Button(emoji="<:website:908421962538307645>", label='Website', url=ctx.bot.website_url))
+        self.add_item(discord.ui.Button(emoji='<:github:744345792172654643>', label='Source', url=ctx.bot.source_url))
         self.add_item(discord.ui.Button(emoji="<:invite:658538493949116428>", label='Invite Me', url=ctx.bot.invite_url))
-        self.add_item(discord.ui.Button(emoji="<:partnernew:754032603081998336>", label='Support Server', url=ctx.bot.support_server))
-        self.add_item(discord.ui.Button(emoji="<:top_gg:895376601112514581>", label='Top.gg', url=ctx.bot.top_gg))
+        self.add_item(discord.ui.Button(emoji="<:top_gg:895376601112514581>", label='Vote', url=ctx.bot.top_gg))
     
 class MyHelp(commands.HelpCommand):
     def get_minimal_command_signature(self, command):
@@ -229,8 +231,11 @@ class About(commands.Cog):
     @commands.command(aliases=['add'],description="Send an invite link")
     async def invite(self, ctx: commands.Context):
         embed = discord.Embed(title='Invite me to you server !',description='Current Permissions: `Administator` and `Slash Commands`')
-        view = Invites(ctx)
-        view.message = await ctx.send(embed=embed, view=view)
+        await ctx.send(embed=embed, view=helper.Url(self.bot.invite_url, label='Invite me', emoji='<:invite:658538493949116428>'))
+
+    @commands.command(aliases=['web'],description="Send an invite link")
+    async def website(self, ctx: commands.Context):
+        await ctx.send(self.bot.website_url)
 
     @commands.command(aliases=['online','up'],description="Shows you the uptime of the bot")
     async def uptime(self, ctx: commands.Context):
@@ -291,26 +296,9 @@ class About(commands.Cog):
         
         await ctx.send(embed=discord.Embed(title='Pong 🏓', description=msg))
 
-    @commands.command(
-        help="Shows information about the bot's shards.",
-        aliases=['shards', 'shard'])
-    async def shardinfo(self, ctx):
-        shards_guilds = {i: {"guilds": 0, "users": 0} for i in range(len(self.bot.shards))}
-        for guild in self.bot.guilds:
-            shards_guilds[guild.shard_id]["guilds"] += 1
-            shards_guilds[guild.shard_id]["users"] += guild.member_count
-
-        embed = discord.Embed()
-        for shard_id, shard in self.bot.shards.items():
-            embed.add_field(name=f"Shard #{shard_id}", value=(
-                f"\nLatency: `{round(shard.latency * 1000, 2)} ms`"
-                f"\nGuilds: `{(shards_guilds[shard_id]['guilds']):,}`"
-                f"\nUsers: `{(shards_guilds[shard_id]['users']):,}`"
-                f"\nClosed: {ctx.tick(shard.is_closed())}"
-                f"\nRate Limited: {ctx.tick(shard.is_ws_ratelimited())}"
-            ))
-
-        await ctx.send(embed=embed)
+    @commands.command(help="Shows information about the bot's status.", aliases=['shards', 'shard'])
+    async def status(self, ctx):
+        await ctx.send('https://www.dapanda.xyz/status')
 
     @commands.command()
     async def news(self, ctx):

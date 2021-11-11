@@ -139,8 +139,7 @@ class Moderation(commands.Cog):
 
     @commands.check_any(commands.has_permissions(manage_guild=True), commands.is_owner())
     @prefixes.command(name="remove", aliases=['delete'])
-    async def prefixes_remove(self, ctx: commands.Context,
-                            prefix: str) -> discord.Message:
+    async def prefixes_remove(self, ctx: commands.Context, prefix: str):
         """Removes a prefix from the bots prefixes.\nuse quotes to add spaces: %PRE%prefix \"PREFIX \" """
 
         old = list(await self.client.get_pre(self.client, ctx.message, raw_prefix=True))
@@ -179,6 +178,7 @@ class Moderation(commands.Cog):
         else:
             return await ctx.send(embed=discord.Embed(title='Can\'t do that', description='I can\'t purge more than 2000 message per use'))
 
+    @commands.command()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(send_messages=True, embed_links=True, ban_members=True)
     async def ban(self, ctx: Context, member:discord.Member, delete_days: typing.Optional[int] = 1, *, reason: str = 'Not specified'):
@@ -200,7 +200,7 @@ class Moderation(commands.Cog):
 
         try:
             await member.send(embed=discord.Embed(title='Banned'.format(ctx.guild.name),
-            description='You were banned from `{}` from moderator {} with reason: {}'.format(ctx.guild.name, ctx.author.mention, reason),
+            description='You were banned from `{}` by `{}` with reason: {}'.format(ctx.guild.name, ctx.author, reason),
             color=discord.Color.red()))
 
             dm = True
@@ -208,13 +208,59 @@ class Moderation(commands.Cog):
             dm = False
             pass
         
-        await ctx.guild.ban(member, reason=f"Banned by {ctx.author} ({ctx.author.id}) with reason: {reason}", delete_message_days=delete_days)
+        await ctx.guild.ban(member, reason=f"Banned by {ctx.author} with reason: {reason}", delete_message_days=delete_days)
         embed=discord.Embed(title='Member banned')
         embed.description='{} was banned from moderator {} with reason: {}'.format(member.mention, ctx.author.mention, reason)
         embed.set_footer(text="DM sent: {}".format(dm))
 
         await ctx.send(embed=embed)
 
+    @commands.command()
+    @commands.has_permissions(ban_members=True)
+    @commands.bot_has_permissions(send_messages=True, embed_links=True, ban_members=True)
+    @commands.cooldown(1, 3.0, commands.BucketType.user)
+    async def unban(self, ctx: Context, user: discord.User):
+        """Unbans a member from the server"""
+        try:
+            await ctx.guild.unban(user)
+        except discord.NotFound:
+            raise commands.BadArgument(f'**{discord.utils.escape_markdown(str(user))}** is not banned on this server!')
+        
+        return await ctx.send(f"Unbanned **{discord.utils.escape_markdown(str(user))}**")
+
+    @commands.command()
+    @commands.has_permissions(kick_members=True)
+    @commands.bot_has_permissions(send_messages=True, embed_links=True, kick_members=True)
+    async def kick(self, ctx: Context, member:discord.Member, *, reason: str = 'Not specified'):
+        """Kicks a member from the server"""
+        if member.id == self.client.user.id:
+            return await ctx.send(embed=discord.Embed(title='Error occured', description='You may not kick me <:rooSad:901660365773996084>'))
+        
+        if member.guild_permissions.administrator:
+            return await ctx.send(embed=discord.Embed(title='Error occured', description='You may not kick an adminstator'))
+
+        if member.id == ctx.guild.owner.id:
+            return await ctx.send(embed=discord.Embed(title='Error occured', description='You may not kick the owner of the guild'))
+        
+        if ctx.author.top_role < member.top_role:
+            return await ctx.send(embed=discord.Embed(title='Error occured', description='You may not kick members that have higher tier roles than you'))
+
+        try:
+            await member.send(embed=discord.Embed(title='Kicked'.format(ctx.guild.name),
+            description='You were kicked from `{}` by `{}` with reason: {}'.format(ctx.guild.name, ctx.author, reason),
+            color=discord.Color.red()))
+
+            dm = True
+        except discord.HTTPException or discord.Forbidden:
+            dm = False
+        
+        await ctx.guild.kick(member, reason=f"Kicked by {ctx.author} with reason: {reason}")
+        
+        embed=discord.Embed(title='Member kicked')
+        embed.description='{} was kicked by moderator {} with reason: {}'.format(member.mention, ctx.author.mention, reason)
+        embed.set_footer(text="DM sent: {}".format(dm))
+
+        await ctx.send(embed=embed)
 
 def setup(client):
     client.add_cog(Moderation(client))

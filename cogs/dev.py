@@ -234,20 +234,6 @@ class dev(commands.Cog, command_attrs=dict(slash_command=False)):
         source = paginator.ServerInfoPageSource(guilds=self.client.guilds, ctx=ctx)
         menu = paginator.ViewPaginator(source=source, ctx=ctx)
         await menu.start()
-
-    @commands.command(aliases=['pull'])
-    @commands.is_owner()
-    async def git_pull(self, ctx, reload_everything: bool = False):
-        """
-        Attempts to pull from git
-        """
-        command = self.client.get_command('jsk git')
-        await ctx.invoke(command, argument=codeblock_converter('pull'))
-        if reload_everything is True:
-            mrl = self.client.get_command('mrl')
-            await ctx.invoke(mrl)
-            rall = self.client.get_command('rall')
-            await ctx.invoke(rall)
     
     @commands.is_owner()
     @commands.command(aliases=['push'])
@@ -318,7 +304,6 @@ class dev(commands.Cog, command_attrs=dict(slash_command=False)):
         await asyncio.sleep(0.5)
 
         try:
-            os.system("systemctl daemon-reload")
             os.system("systemctl restart bot")
         except:
             await ctx.send(embed=discord.Embed(title='Error occured', description='Somethin went wrong while trying to reboot'))
@@ -394,7 +379,11 @@ class dev(commands.Cog, command_attrs=dict(slash_command=False)):
         table = await self.client.db.fetch('TABLE blacklist')
         user_list = []
         for x in table:
-            user = self.client.get_user(x["user_id"])
+            try:
+                user = await commands.UserConverter().convert(ctx, str(x["user_id"]))
+            except discord.ext.commands.UserNotFound:
+                user = '@Unknown'
+
             user_list.append(f'{user} - {x["reason"]}')
         source = paginator.BlackListMenuPageSource(data=user_list)
         menu = paginator.ViewPaginator(source=source, ctx=ctx)

@@ -115,6 +115,8 @@ class Main(commands.AutoShardedBot):
         self.owner_id = 383946213629624322
         self.user_id = 786550035952173107
 
+        self.website_url ='https://www.dapanda.xyz'
+        self.source_url = 'https://github.com/MiroslavRosenov/DaPanda'
         self.invite_url = 'https://discord.com/api/oauth2/authorize?client_id=786550035952173107&permissions=8&scope=bot%20applications.commands'
         self.support_server = 'https://discord.gg/Rpg7zjFYsh'
         self.top_gg = 'https://top.gg/bot/786550035952173107'

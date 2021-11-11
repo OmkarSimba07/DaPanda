@@ -527,7 +527,7 @@ class utility(commands.Cog):
         """
         global obj
         source_url = 'https://github.com/MiroslavRosenov/DaPanda'
-        branch = 'main'
+        branch = 'master'
         license_url = f'{source_url}/blob/{branch}/LICENSE'
         mpl_advice = f'**This code is licensed under [MPL]({license_url})**' \
                      f'\nRemember that you must use the ' \
@@ -539,9 +539,7 @@ class utility(commands.Cog):
                                   description=mpl_advice)
             embed.set_image(
                 url='https://image.prntscr.com/image/BMmJV90XTwmmeD91diWlaQ.png')
-            return await ctx.send(embed=embed,
-                                  view=helper.Url(source_url, label='Open on GitHub', emoji='<:github:744345792172654643>'),
-                                  footer=False)
+            return await ctx.send(embed=embed, view=helper.Url(source_url, label='Open on GitHub', emoji='<:github:744345792172654643>'))
 
         if command == 'help':
             src = type(self.client.help_command)
