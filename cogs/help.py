@@ -62,9 +62,7 @@ class MyHelp(commands.HelpCommand):
         embed.add_field(name=f'<:categories:895425612804661299> **Available categories ({len(cogs)})** ',
                         value=(f"{''.join(cogs)}"), inline=True)
         
-        #embed.add_field(name='<:news:658522693058166804> **Latest News - <t:1635375068:d> (<t:1635375068:R>)**:',
-                       # value=news, inline=True)
-        
+        #embed.set_image(url='https://dapanda.xyz/assets/banner.png')
         await self.context.send(embed=embed, view=Invites(self.context))
         
 

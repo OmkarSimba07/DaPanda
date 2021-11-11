@@ -7,7 +7,7 @@ import aiohttp
 import discord
 import typing
 from discord.ext import commands
-from helpers import consts
+from helpers import context as Context
 
 def setup(bot):
     bot.add_cog(Fun(bot))
@@ -47,35 +47,29 @@ class Fun(commands.Cog, name='Fun'):
                 if iterations > 9:
                     iterations = 1
 
-            embed = discord.Embed(color=discord.Color.random(),
-                                  description='\n'.join(options))
+            embed = discord.Embed(color=discord.Color.random(), description='\n'.join(options))
             embed.title = post.title if title is True else None
             return embed, emojis
 
-    @commands.command(name='meme')
+    @commands.command()
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
-    async def _meme(self, ctx: commands.Context) -> discord.Message:
-        async with aiohttp.ClientSession() as session:
-            meme = await session.get('https://some-random-api.ml/meme')
-            meme = await meme.json()
-
-        embed = discord.Embed(title=meme['caption'])
-        embed.set_image(url=meme['image'])
-        embed.set_footer(text=f'Category: {meme["category"]}')
+    async def meme(self, ctx: commands.Context) -> discord.Message:
+        embed = await self.reddit(subreddit='meme')
         await ctx.send(embed=embed)
 
-    @commands.command(name='joke')
+    @commands.command()
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
-    async def _joke(self, ctx: commands.Context) -> discord.Message:
+    async def joke(self, ctx: commands.Context) -> discord.Message:
         async with aiohttp.ClientSession() as session:
             joke = await session.get('https://some-random-api.ml/joke')
             joke = await joke.json()
 
         await ctx.send(joke['joke'])
-
-    @commands.command(name='panda', help="🐼 Shows a picture of a panda and a random fact about pandas")
+    
+    @commands.command()
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
-    async def _panda(self, ctx: commands.Context) -> discord.Message:
+    async def panda(self, ctx: commands.Context) -> discord.Message:
+        """🐼 Shows a picture of a panda and a random fact about pandas"""
         async with aiohttp.ClientSession() as session:
             img = await session.get('https://some-random-api.ml/img/panda')
             img = await img.json()
@@ -87,9 +81,10 @@ class Fun(commands.Cog, name='Fun'):
         embed.set_footer(text=fact['fact'])
         await ctx.send(embed=embed)
 
-    @commands.command(name='cat', help="🐱 Shows a picture of a cat and a random fact about cats")
+    @commands.command()
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
-    async def _cat(self, ctx: commands.Context) -> discord.Message:
+    async def cat(self, ctx: commands.Context) -> discord.Message:
+        """🐱 Shows a picture of a cat and a random fact about cats"""
         async with aiohttp.ClientSession() as session:
             img = await session.get('https://some-random-api.ml/img/cat')
             img = await img.json()
@@ -137,3 +132,8 @@ class Fun(commands.Cog, name='Fun'):
                 await ctx.send(embed=embed)
             else:
                 await ctx.send(embed=discord.Embed(title='Couldn\'t find anything, sorry !',color=discord.Color.red()))
+    
+    @commands.command()
+    async def tias(self, ctx:Context):
+        """Try And See"""
+        await ctx.send('https://tryitands.ee/')
