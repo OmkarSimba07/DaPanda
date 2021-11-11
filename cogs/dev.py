@@ -238,9 +238,7 @@ class dev(commands.Cog, command_attrs=dict(slash_command=False)):
     @commands.is_owner()
     @commands.command(aliases=['push'])
     async def git_push(self, ctx, *, message: str):
-        """
-        Attempts to push to git
-        """
+        """Attempts to push changes to GitHub"""
         command = self.client.get_command('jsk git')
         await ctx.invoke(command, argument=codeblock_converter(f'add .\ngit commit -m "{message}"\ngit push'))
 

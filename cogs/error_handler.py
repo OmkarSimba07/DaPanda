@@ -2,7 +2,7 @@ import io
 import itertools
 import logging
 import traceback
-from typing import List
+import copy
 import discord
 import difflib
 import helpers.errors as errors
@@ -93,10 +93,23 @@ class Handler(commands.Cog):
             if matches:
                 embed = discord.Embed(title=f"Command not found",
                                       description=f"\n{f'Did you mean `{matches[0]}` ?' if matches else ''}")
-                return await ctx.send(embed=embed)
+                
+                confirm = await ctx.confirm(embed, 
+                                            delete_after_confirm=True, 
+                                            delete_after_timeout=True,
+                                            delete_after_cancel=True, buttons=(
+                                            (ctx.tick(True), 'Yes', discord.ButtonStyle.green),
+                                            (ctx.tick(False), 'No', discord.ButtonStyle.red)
+                                        ), timeout=15)
+                
+                if confirm:
+                    message = copy.copy(ctx.message)
+                    message.content = message.content.replace(ctx.invoked_with, matches[0])
+                    return await self.bot.process_commands(message)
+                else:
+                    return
             else:
-                embed = discord.Embed(title=f"Command not found",
-                                      description=f"Sorry, but the command **{ctx.invoked_with}** was not found.")
+                embed = discord.Embed(title=f"Command not found", description=f"Sorry, but the command **{ctx.invoked_with}** was not found.", color=discord.Color.red())
                 return await ctx.send(embed=embed)
 
         if isinstance(error, discord.ext.commands.CheckAnyFailure):
