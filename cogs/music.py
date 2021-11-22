@@ -524,7 +524,7 @@ class Music(commands.Cog):
         for track in player.queue:
             info.append(f'**[{track.title.upper()}]({track.uri})** ({format_time(track.length)})\n')
         
-        menu = paginator.ViewPaginator(paginator.QueueMenu(info, ctx),ctx=ctx)
+        menu = paginator.ViewPaginator(paginator.QueueMenu(info, ctx), ctx=ctx)
         await menu.start()
     
     @commands.command()
@@ -680,7 +680,7 @@ class Music(commands.Cog):
             raise NoCurrentTrack
 
         if player.loop == 1:
-            return await ctx.send(embed=discord.Embed(title='Error occured', description='Loop mode is already set to `TRACK`', color=discord.Color.red()))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...', description='Loop mode is already set to `TRACK`', color=discord.Color.red()))
 
         player.loop = 1
         await ctx.send(embed=discord.Embed(title='Looping current track', description='Loop mode has been set up to `TRACK`'))
@@ -697,7 +697,7 @@ class Music(commands.Cog):
             raise QueueIsEmpty
 
         if player.loop == 2:
-            return await ctx.send(embed=discord.Embed(title='Error occured', description='Loop mode is already set to `PLAYLIST`', color=discord.Color.red()))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...', description='Loop mode is already set to `PLAYLIST`', color=discord.Color.red()))
 
         player.loop = 2
         await ctx.send(embed=discord.Embed(title='Looping playlist', description='Loop mode has been set up to `PLAYLIST`'))
@@ -711,7 +711,7 @@ class Music(commands.Cog):
             raise NotAuthorized
         
         if player.loop == 0:
-            return await ctx.send(embed=discord.Embed(title='Error occured', description='Loop mode is already set to `DISABLED`', color=discord.Color.red()))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...', description='Loop mode is already set to `DISABLED`', color=discord.Color.red()))
 
         player.loop = 0
         await ctx.send(embed=discord.Embed(title='Looping track', description='Loop mode was set to `DISABLED`'))

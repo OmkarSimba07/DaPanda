@@ -14,7 +14,7 @@ class LookingForButton(discord.ui.Button):
         assert self.view is not None
         view: LookingToPlay = self.view
         if interaction.user and interaction.user.id == view.ctx.author.id:
-            return await interaction.response.send_message(embed=discord.Embed(title='Error Occured', description='You can\t play with yourself', color=discord.Color.red()),
+            return await interaction.response.send_message(embed=discord.Embed(title='Error Occured', description='You can\'t play with yourself', color=discord.Color.red()),
                                                             ephemeral=True)
         view.value = interaction.user
         view.stop()
@@ -114,7 +114,7 @@ class TicTacToeButton(discord.ui.Button['TicTacToe']):
             elif winner == view.O:
                 embed = discord.Embed(title=f'{view.current_player.name} is the winner - 🅾',  description=f'{view.current_player.mention} has won 🏆', color=discord.Color.red())
             else:
-                embed = discord.Embed(title=f' It\'s a tie ☠️', description='That means that there is no winner', color=discord.Color.red())
+                embed = discord.Embed(title=f' It\'s a tie ☠️', color=discord.Color.red())
 
             for child in view.children:
                 child.disabled = True

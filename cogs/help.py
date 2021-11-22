@@ -23,7 +23,7 @@ class Invites(discord.ui.View):
         self.add_item(discord.ui.Button(emoji='<:github:744345792172654643>', label='Source', url=ctx.bot.source_url))
         self.add_item(discord.ui.Button(emoji="<:invite:658538493949116428>", label='Invite Me', url=ctx.bot.invite_url))
         self.add_item(discord.ui.Button(emoji="<:top_gg:895376601112514581>", label='Vote', url=ctx.bot.top_gg))
-    
+
 class MyHelp(commands.HelpCommand):
     def get_minimal_command_signature(self, command):
         if isinstance(command, commands.Group):
@@ -120,7 +120,7 @@ class MyHelp(commands.HelpCommand):
         await menu.start()
 
     async def send_error_message(self, error):
-        await self.context.send(embed=discord.Embed(title='Error occured', description=error))
+        await self.context.send(embed=discord.Embed(title='Something went wrong...', description=error))
 
 class About(commands.Cog):
     """
@@ -133,24 +133,10 @@ class About(commands.Cog):
         bot.help_command = help_command
         bot.session = aiohttp.ClientSession()
 
-    @commands.command(help="Shows info about the bot")
+    @commands.command(aliases=['info'])
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     async def about(self, ctx):
-        """Tells you information about the bot itself."""
-        permissions = [permission for permission in ctx.me.guild_permissions]
-        allowed = []
-        for name, value in permissions:
-            name = name.replace("_", " ").replace("guild", "server").title()
-
-            if value and name:
-                allowed.append(f"`{name}`")
-
-        if 'Administrator' in allowed:
-            allowed = ["Administrator"]  
-
-        if len(allowed) == 0:
-            allowed = ['None']         
-
+        """Shows info about the bot"""
         information = await self.bot.application_info()
         text_channels = len([channel for channel in self.bot.get_all_channels() if isinstance(channel, discord.TextChannel)])
         voice_channels = len([channel for channel in self.bot.get_all_channels() if isinstance(channel, discord.VoiceChannel)])
@@ -172,28 +158,28 @@ class About(commands.Cog):
         embed = discord.Embed(title=f'Information about me (DaPanda)', url=self.bot.invite_url)
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         
-        embed.add_field(name=f'<:partnernew:754032603081998336> Servers ({len(self.bot.guilds)})', value=
-        f"\n╰ <:members:658538493470965787> Members: {len(self.bot.users):,}"
-        f"\n╰ <:bot:891076085314388058> Bots: {len(list(filter(lambda m : m.bot, self.bot.users))):,}", inline=True)
-
         embed.add_field(name=f'<:rich_presence:658538493521166336> Channels ({channels})', value=
         f"\n╰ <:categories:895425612804661299> Categories : {categories}"
         f"\n╰ <:voice:585783907673440266> Voice: {voice_channels}"
         f"\n╰ <:channel:585783907841212418> Text: {text_channels}"
-        f"\n╰ <:stagechannel:824240882793447444> Stages: {stage_channels}", inline=False)
+        f"\n╰ <:stagechannel:824240882793447444> Stages: {stage_channels}")
+   
+        embed.add_field(name='\u200b', value='\u200b')
         
+        embed.add_field(name=f'<:partnernew:754032603081998336> Servers ({len(self.bot.guilds)})', value=
+        f"\n╰ <:members:658538493470965787> Members: {len(self.bot.users):,}"
+        f"\n╰ <:bot:891076085314388058> Bots: {len(list(filter(lambda m : m.bot, self.bot.users))):,}") 
+
         embed.add_field(name='🖥️ Processes', value=
-        f"\n╰ `{memory_usage:.2f}% RAM` ussage"
-        f"\n╰ `{cpu_usage:.2f}% CPU` ussage", inline=True)
+        f"\n╰ `{memory_usage:.2f}% RAM` usage"
+        f"\n╰ `{cpu_usage:.2f}% CPU` usage")
+
+        embed.add_field(name='\u200b', value='\u200b')
 
         embed.add_field(name='⚙️ Versions', value=
         f"\n╰ <:dpy:596577034537402378> Discord: `{discord.__version__}`"
-        f"\n╰ <:python:596577462335307777> Python: `{full_version}`", inline=True)
+        f"\n╰ <:python:596577462335307777> Python: `{full_version}`")
 
-        embed.add_field(name=f'🔓 Server Permissions ({len(allowed)})', value=
-        f"\n╰ {', '.join(allowed)}"
-        , inline=False)
-        
         embed.set_footer(text=f'Made by {information.owner}', icon_url=information.owner.display_avatar.url)
         
         await ctx.send(embed=embed, view=Invites(ctx))
@@ -226,16 +212,16 @@ class About(commands.Cog):
         await channel.send(embed=embed2)
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['add'],description="Send an invite link")
+    @commands.command(aliases=['add'], description="Send an invite link")
     async def invite(self, ctx: commands.Context):
         embed = discord.Embed(title='Invite me to you server !',description='Current Permissions: `Administator` and `Slash Commands`')
         await ctx.send(embed=embed, view=helper.Url(self.bot.invite_url, label='Invite me', emoji='<:invite:658538493949116428>'))
 
-    @commands.command(aliases=['web'],description="Send an invite link")
+    @commands.command(aliases=['web'], description="Send an invite link")
     async def website(self, ctx: commands.Context):
         await ctx.send(self.bot.website_url)
 
-    @commands.command(aliases=['online','up'],description="Shows you the uptime of the bot")
+    @commands.command(aliases=['online','up'], description="Shows you the uptime of the bot")
     async def uptime(self, ctx: commands.Context):
         embed = discord.Embed(title='Uptime status',description=f'I\'ve been online for `{time_.human_timedelta(self.bot.start_time, suffix=False)}` or since {discord.utils.format_dt(self.bot.start_time)}')
         await ctx.send(embed=embed)

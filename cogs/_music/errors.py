@@ -35,7 +35,7 @@ __all__ = (
 class errors(commands.CommandError):
     def __init__(self, e) -> None:
         self.custom = True
-        self.embed = discord.Embed(title='Error occured',
+        self.embed = discord.Embed(title='Something went wrong...',
                                    description = e,
                                    color = discord.Color.red())
         super().__init__(e)

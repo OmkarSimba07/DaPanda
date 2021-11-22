@@ -5,18 +5,12 @@ import typing
 import discord
 import helpers.consts as consts
 import helpers.helper as helper
+from helpers.context import CustomContext as Context
 from typing import Any, Dict, Optional
 from discord.ext import commands
 from discord.ext.commands import Paginator as CommandPaginator
 from discord.ext import menus
 
-def color(context):
-    if isinstance(context, commands.Context):
-        return context.guild.me.color if context.guild.me.color != discord.Color.default() else discord.Color.blurple()
-    elif isinstance(context, discord.Guild):
-        return context.me.color if context.me.color != discord.Color.default() else discord.Color.blurple()
-    else:
-        raise TypeError('Invalid context')
 
 class ViewPaginator(discord.ui.View):
     def __init__(
@@ -126,9 +120,9 @@ class ViewPaginator(discord.ui.View):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user and interaction.user.id in (self.ctx.bot.owner_id, self.ctx.author.id):
             return True
-        await interaction.response.send_message(embed=discord.Embed(title='Error occured'
+        await interaction.response.send_message(embed=discord.Embed(title='Something went wrong...'
                                                 ,description=f'This menu belongs to {self.ctx.author.mention}, sorry!'
-                                                ,color=self.ctx.color
+                                                ,color=discord.Color.red()
                                                 ,ephemeral=True))
         return False
 
@@ -183,7 +177,7 @@ class ViewPaginator(discord.ui.View):
     async def numbered_page(self, button: discord.ui.Button, interaction: discord.Interaction):
         """lets you type a page number to go to"""
         if self.input_lock.locked():
-            await interaction.response.send_message(embed=discord.Embed(title='Error occured!',description='Already waiting for your response...',color=0xe74c3c), ephemeral=True)
+            await interaction.response.send_message(embed=discord.Embed(title='Something went wrong...!',description='Already waiting for your response...',color=0xe74c3c), ephemeral=True)
             return
 
         if self.message is None:
@@ -192,7 +186,7 @@ class ViewPaginator(discord.ui.View):
         async with self.input_lock:
             channel = self.message.channel
             author_id = interaction.user and interaction.user.id
-            await interaction.response.send_message(embed=discord.Embed(title=f'Available pages: {self.source._max_pages}',description='What page do you want to go to?',color=color(self.ctx)), ephemeral=True)
+            await interaction.response.send_message(embed=discord.Embed(title=f'Available pages: {self.source._max_pages}',description='What page do you want to go to?',color=self.ctx.color, ephemeral=True))
 
             def message_check(m):
                 return m.author.id == author_id and channel.id == m.channel.id and m.content.isdigit()
@@ -339,7 +333,7 @@ class QueueMenu(menus.ListPageSource):
         offset = menu.current_page * self.per_page
         
         embed = discord.Embed(title='{} songs in the queue'.format(len(self.data)) if len(self.data) > 1 else '1 song in the queue'
-                             ,colour=color(self.ctx))
+                             ,colour=self.ctx.color)
         
         for i, v in enumerate(entries, start=offset):
             embed.add_field(name='\u200b',value=f'`{i+1}.` {v}',inline=False)
@@ -359,10 +353,8 @@ class NodesMenu(menus.ListPageSource):
         
         for i, v in enumerate(entries, start=offset):
             embed.add_field(name=''.join(v.keys()),value=f'╰ {"".join(v.values())}', inline=True)
-            #embed.add_field(name='Identifier',value=f'╰ {v[1]}', inline=False)
         return embed
     
-
 class ServerInfoPageSource(menus.ListPageSource):
     def __init__(self, guilds: typing.List[discord.Guild], ctx: commands.Context):
         self.guilds = guilds
@@ -499,11 +491,6 @@ class BlackListMenuPageSource(menus.ListPageSource):
         embed = discord.Embed(title="Blacklist menu",
                         description="\n".join(f'`{i+1}.` {data}\n' for i, data in enumerate(entries, start=offset)))
         return embed
-    def is_paginating(self):
-        if len(self.data) > self.per_page:
-            return True
-        else:
-            return False
 
 class AfkMenuPageSource(menus.ListPageSource):
     def __init__(self, data: list) -> discord.Embed:
@@ -532,40 +519,6 @@ class LyricsPageSource(menus.ListPageSource):
                               color=self.ctx.me.color,
                               description="\n".join(f'{data}' for i, data in enumerate(entries, start=offset)))
         embed.set_thumbnail(url=self.image)
-        return embed
-
-class HelpMenuPageSource(menus.ListPageSource):
-    def __init__(self, data: typing.List[typing.SimpleNamespace], ctx,
-                 help_class: commands.HelpCommand) -> discord.Embed:
-        
-        self.data = data
-        self.ctx = ctx
-        self.help = help_class
-        super().__init__(data, per_page=1)
-
-    async def format_page(self, menu, data):
-        prefixes = await self.ctx.bot.get_pre(self.ctx.bot, self.ctx.message, raw_prefix=True)
-        prefixList = self.ctx.me.mention
-        for x in prefixes:
-            prefixList += f', `{x}`'
-
-        embed = discord.Embed(title="Help Menu", color=self.ctx.color,
-        description=f"\n> <:rules:781581022059692043> Available prefixes: {prefixList}"
-                    f"\n> 🕐 Uptime: {self.ctx.bot.uptime()}"
-                    f"\n> <:slash:782701715479724063> Total Commands: {len(list(self.ctx.bot.commands))} | Usable by you (here): {len(await self.help.filter_commands(list(self.ctx.bot.commands), sort=True))} <:slash:782701715479724063>"
-                    f"\n```diff"
-                    f"\n+ Use panda.help [command] to get details on a command"
-                    f"\n- <> = required argument"
-                    f"\n- [] = optional argument"
-                    f"``````css"
-                    f"\n{self.ctx.clean_prefix}help [command|category|group]"
-                    f"\n```"
-                    f"\n")
-        
-        embed.add_field(name=data[0], value=data[1])
-        
-        embed.set_footer(text=("\n[G] - group of commands"
-                               "\n(c) - regular command"))
         return embed
 
 class GroupHelpPageSource(menus.ListPageSource):
@@ -621,3 +574,17 @@ class GroupHelpPageSource(menus.ListPageSource):
         if isinstance(command, commands.Group):
             return '[G] %s%s %s' % (self.prefix, command.qualified_name, command.signature)
         return '(c) %s%s %s' % (self.prefix, command.qualified_name, command.signature)
+
+class Leaderboard(menus.ListPageSource):
+    def __init__(self, data: list, ctx:Context) -> discord.Embed:
+        self.data = data
+        self.ctx = ctx
+        super().__init__(data, per_page=10)
+
+    async def format_page(self, menu, entries):
+        offset = menu.current_page * self.per_page
+        embed = discord.Embed(title="Bamboo leaderboard for {}".format(self.ctx.guild),
+                        description="\n".join(f'`{i+1}.` {data}\n' for i, data in enumerate(entries, start=offset)))
+        embed.color = self.ctx.color
+        
+        return embed

@@ -123,20 +123,20 @@ class Handler(commands.Cog):
                 error = error.errors[0]
 
         if isinstance(error, commands.NotOwner):
-            return await ctx.send(embed=discord.Embed(title='Error occured',description=f"You must own `{ctx.me.display_name}` to use `{ctx.command}`"))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...',description=f"You must own `{ctx.me.display_name}` to use `{ctx.command}`"))
 
         if isinstance(error, commands.TooManyArguments):
-            return await ctx.send(embed=discord.Embed(title='Error occured',description=f"Too many arguments passed to the command!"))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...',description=f"Too many arguments passed to the command!"))
 
         if isinstance(error, discord.ext.commands.MissingPermissions):
             missing = [(e.replace('_', ' ').replace('guild', 'server')).title() for e in error.missing_permissions]
             perms_formatted = ", ".join(missing[:-2] + [" and ".join(missing[-2:])])
-            return await ctx.send(embed=discord.Embed(title='Error occured',description=f"You're missing **{perms_formatted}** permissions!"))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...',description=f"You're missing **{perms_formatted}** permissions!"))
 
         if isinstance(error, discord.ext.commands.BotMissingPermissions):
             missing = [(e.replace('_', ' ').replace('guild', 'server')).title() for e in error.missing_permissions]
             perms_formatted = ", ".join(missing[:-2] + [" and ".join(missing[-2:])])
-            return await ctx.send(embed=discord.Embed(title='Error occured', description=f"I'm missing **{perms_formatted}** permissions!", color=discord.Color.red()))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...', description=f"I'm missing **{perms_formatted}** permissions!", color=discord.Color.red()))
 
         if isinstance(error, discord.ext.commands.MissingRequiredArgument):
             missing = f"{error.param.name}"
@@ -152,7 +152,7 @@ class Handler(commands.Cog):
             return await ctx.send(f"`{error.argument}` is not a valid Custom Emoji")
 
         if isinstance(error, commands.errors.CommandOnCooldown):
-            embed = discord.Embed(title='Error occured', color=discord.Color.red(), description=f'Please try again in {round(error.retry_after, 2)} seconds')
+            embed = discord.Embed(title='Something went wrong...', color=discord.Color.red(), description=f'Please try again in {round(error.retry_after, 2)} seconds')
             embed.set_author(name='Command is on cooldown!', icon_url='https://i.imgur.com/izRBtg9.png')
 
             if error.type == BucketType.default:
@@ -176,7 +176,7 @@ class Handler(commands.Cog):
             return await ctx.send(embed=embed)
 
         if isinstance(error, discord.ext.commands.errors.MaxConcurrencyReached):
-            embed = discord.Embed(title='Error occured', color=discord.Color.red(), description=f"Please try again once you are done running the command")
+            embed = discord.Embed(title='Something went wrong...', color=discord.Color.red(), description=f"Please try again once you are done running the command")
             embed.set_author(name='Command is already running!', icon_url='https://i.imgur.com/izRBtg9.png')
 
             if error.per == BucketType.default:
@@ -208,33 +208,33 @@ class Handler(commands.Cog):
                                   "or can create it with the `muterole create` command")
 
         if isinstance(error, errors.NoEmojisFound):
-            embed = discord.Embed(title='Error occured', description="I couldn't find any emojis there.", color=discord.Color.red())
+            embed = discord.Embed(title='Something went wrong...', description="I couldn't find any emojis there.", color=discord.Color.red())
             return await ctx.send(embed=embed)
 
         if isinstance(error, commands.errors.MemberNotFound):
-            embed = discord.Embed(title='Error occured', description="`{}` doesn't seem to be an actuall member of this server".format(error.argument), color=discord.Color.red())
+            embed = discord.Embed(title='Something went wrong...', description="`{}` doesn't seem to be an actual member of this server".format(error.argument), color=discord.Color.red())
             return await ctx.send(embed=embed)
 
         if isinstance(error, commands.errors.UserNotFound):
-            embed = discord.Embed(title='Error occured', description="`{}` doesn't seem to be an actuall discord user".format(error.argument), color=discord.Color.red())
+            embed = discord.Embed(title='Something went wrong...', description="`{}` doesn't seem to be an actual discord user".format(error.argument), color=discord.Color.red())
             return await ctx.send(embed=embed)
 
         if isinstance(error, commands.BadArgument):
             error = error or "Bad argument given!"
             
-            embed = discord.Embed(title='Error occured', description=error, color=discord.Color.red())
+            embed = discord.Embed(title='Something went wrong...', description=error, color=discord.Color.red())
             return await ctx.send(embed=embed)
 
         if isinstance(error, commands.NoPrivateMessage):
-            embed = discord.Embed(title='Error occured', description="This command does not work inside DMs", color=discord.Color.red())
+            embed = discord.Embed(title='Something went wrong...', description="This command does not work inside DMs", color=discord.Color.red())
             return await ctx.send(embed=embed)
 
         if isinstance(error, commands.PrivateMessageOnly):
-            embed = discord.Embed(title='Error occured', description="This command only works inside DMs", color=discord.Color.red())
+            embed = discord.Embed(title='Something went wrong...', description="This command only works inside DMs", color=discord.Color.red())
             return await ctx.send(embed=embed)
 
         if isinstance(error, commands.NSFWChannelRequired):
-            embed = discord.Embed(title='Error occured', description="This commands only works in NSFW channels", color=discord.Color.red())
+            embed = discord.Embed(title='Something went wrong...', description="This commands only works in NSFW channels", color=discord.Color.red())
             return await ctx.send(embed=embed)
 
         else:

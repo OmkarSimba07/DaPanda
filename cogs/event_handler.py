@@ -1,7 +1,8 @@
 import logging
 import discord
 import helpers.paginator as paginator
-from discord.ext import commands, tasks
+import helpers.helper as helper
+from discord.ext import commands
 from .utils import time
 
 
@@ -10,38 +11,43 @@ def setup(bot):
 
 
 class Event_Handler(commands.Cog):
-    """
-    🆘 Handles them events 👀
-    """
+    """Handles them events 👀"""
 
     def __init__(self, bot):
         self.client = bot
         self.log_channel = 890080860349530123
-        self.update_stats.start()
     
-    @tasks.loop(minutes=30)
-    async def update_stats(self):
-        """This function runs every 30 minutes to automatically update your server count."""
-        try:
-            await self.client._topgg.post_guild_count()
-            logging.info(f'Posted server count ({self.client._topgg.guild_count})')
-        except Exception as e:
-            logging.error('Failed to post server count\n{}: {}'.format(type(e).__name__, e))
+    @commands.Cog.listener('on_autopost_success')
+    async def on_auto_post(self):
+        logging.info(f'Posted server count ({self.client._topgg.guild_count}), shard count ({self.client.shard_count})')
 
     @commands.Cog.listener('on_dbl_vote')
     async def on_topgg_vote(self, data):
         """An event that is called whenever someone votes for the bot on Top.gg."""
-        if data["type"] == "test":
-            # this is roughly equivalent to
-            # return await on_dbl_test(data) in this case
-            return self.client.dispatch('dbl_test', data)
+        channel = self.client.get_channel(905982411966390342)
+        user = await self.client.fetch_user(data["user"])
 
-        logging.info(f"Received a vote:\n{data}")
+        if data["isWeekend"]:
+            amount = 600
+        else:
+            amount = 120
 
-    @commands.Cog.listener('on_dbl_test')
-    async def on_topgg_vote_test(self, data):
-        """An event that is called whenever someone tests the webhook system for your bot on Top.gg."""
-        logging.info(f"Received a test vote:\n{data}")
+        embed = discord.Embed(title='Received vote', color=discord.Color.green())
+        if user.avatar:
+            embed.set_thumbnail(url=user.avatar)
+        embed.description = f"{user.mention if user in channel.guild.members else user} just voted on top.gg and earned themselves **{amount}** <:bamboo:911241395434565652>"
+
+        view=helper.Url(url=self.client.vote_url,
+                        emoji='<:top_gg:895376601112514581>',
+                        label='Top.gg')
+        await channel.send(embed=embed, view=view)
+
+        await self.client.db.execute(
+                "INSERT INTO economy(user_id, amount) VALUES ($1, $2) "
+                "ON CONFLICT (user_id) DO UPDATE SET amount= $2",
+                int(data["user"]), self.client.bal(int(data["user"])) + amount)
+
+        self.client.bamboos[int(data["user"])] = self.client.bal(int(data["user"])) + amount
 
     @commands.Cog.listener('on_message')
     async def on_afk_user_message(self, message: discord.Message):
@@ -65,6 +71,8 @@ class Event_Handler(commands.Cog):
     
     @commands.Cog.listener('on_message')
     async def on_afk_user_mention(self, message: discord.Message):
+        if message.author.bot:
+            return
         if not message.guild:
             return
         if message.author == self.client.user:

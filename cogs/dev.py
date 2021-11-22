@@ -176,7 +176,7 @@ class dev(commands.Cog, command_attrs=dict(slash_command=False)):
             embed = discord.Embed(title='Reloaded all extensions', description=to_send, color=ctx.color)
             await message.edit(embed=embed)
 
-    @commands.command(pass_context=True, hidden=True)
+    @commands.command(pass_context=True, hidden=True, aliases=['e'])
     @commands.is_owner()
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     async def eval(self, ctx, *, body: str):
@@ -265,7 +265,7 @@ class dev(commands.Cog, command_attrs=dict(slash_command=False)):
             command = self.client.get_command('jsk cat')
             await ctx.invoke(command, argument='system-logs/client/warnings.log')
         else:
-            await ctx.send(embed=discord.Embed(title='Error occured', description='No warnings found in the logs', color=discord.Color.red()))
+            await ctx.send(embed=discord.Embed(title='Something went wrong...', description='No warnings found in the logs', color=discord.Color.red()))
 
     @commands.is_owner()
     @logs.command(name="errors")
@@ -278,7 +278,7 @@ class dev(commands.Cog, command_attrs=dict(slash_command=False)):
             command = self.client.get_command('jsk cat')
             await ctx.invoke(command, argument='system-logs/client/errors.log')
         else:
-            await ctx.send(embed=discord.Embed(title='Error occured', description='No errors found in the logs', color=discord.Color.red()))
+            await ctx.send(embed=discord.Embed(title='Something went wrong...', description='No errors found in the logs', color=discord.Color.red()))
 
     @commands.is_owner()
     @logs.command(name="criticals")
@@ -291,23 +291,23 @@ class dev(commands.Cog, command_attrs=dict(slash_command=False)):
             command = self.client.get_command('jsk cat')
             await ctx.invoke(command, argument='system-logs/client/criticals.log')
         else:
-            await ctx.send(embed=discord.Embed(title='Error occured', description='No criticals found in the logs', color=discord.Color.red()))
+            await ctx.send(embed=discord.Embed(title='Something went wrong...', description='No criticals found in the logs', color=discord.Color.red()))
 
     @commands.command()
     @commands.is_owner()
     async def reboot(self, ctx:Context) -> discord.Message:
         """Reboots the bot"""
-        await ctx.send(embed=discord.Embed(title='Trying to reboot', description='If this proccess take more that 15 seconds, you are screwed <:rooSad:901660365773996084>'))
+        embed=discord.Embed(title='Please confirm your actions', description='This action cannot be undone and there is \n possibility that the bot, can fail to boot')
+        confirm = await ctx.confirm(embed)
         
-        await asyncio.sleep(0.5)
+        if confirm:
+            f = open("system-logs/last-reboot.log", "w")
+            f.write(str(ctx.channel.id))
 
-        try:
+            await asyncio.sleep(1.5)
             os.system("systemctl restart bot")
-        except:
-            await ctx.send(embed=discord.Embed(title='Error occured', description='Somethin went wrong while trying to reboot'))
-        
         else:
-            pass
+            return
 
     @commands.group(invoke_without_command=True)
     @commands.is_owner()

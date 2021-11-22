@@ -14,6 +14,10 @@ DEFAULT_TICKS = {
     None: '➖',
 }
 
+CUSTOM_EMOJIS = {
+    'bal': '<:bamboo:911241395434565652>'
+}
+
 USER_FLAGS = {
     'staff': '<:staff:903705903205842984>',
     'partner': '<:partnernew:903710462707900467>',

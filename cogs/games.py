@@ -14,13 +14,14 @@ class Games(commands.Cog, name='Games'):
     """
     def __init__(self, bot):
         self.bot = bot
+    
     @commands.max_concurrency(1, commands.BucketType.user, wait=False)
     @commands.command(aliases=['ttt', 'tic'])
     async def tictactoe(self, ctx: commands.context):
         """Starts a tic-tac-toe game."""
         embed = discord.Embed(description=f'🔎 | {ctx.author.mention}'
                                         f'\n👀 |  A member is looking for someone to play **Tic-Tac-Toe**')
-        embed.set_thumbnail(url='https://i.imgur.com/DZhQwnD.gif')
+        embed.set_thumbnail(url='https://i.imgur.com/Vzso3N6.png')
         embed.set_author(name='Tic-Tac-Toe', icon_url='https://i.imgur.com/RTwo0om.png')
         player1 = ctx.author
         view = tictactoe.LookingToPlay(timeout=120)

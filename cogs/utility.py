@@ -16,15 +16,7 @@ from helpers.context import CustomContext as Context
 
 import helpers.consts as consts
 
-def color(context):
-    if isinstance(context, commands.Context):
-        return context.guild.me.color if context.guild.me.color != discord.Color.default() else discord.Color.blurple()
-    elif isinstance(context, discord.Guild):
-        return context.me.color if context.me.color != discord.Color.default() else discord.Color.blurple()
-    else:
-        raise TypeError('Invalid context')
-
-class utility(commands.Cog):
+class Utility(commands.Cog):
     """
         🛠️ Text and utility commands, mostly to display information about a server.
     """
@@ -93,12 +85,12 @@ class utility(commands.Cog):
             await ctx.send(embed=embed)
 
         else:
-            return await ctx.send(embed=discord.Embed(title='Error occured', description='{} has no banner'.format(member.mention)))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...', description='{} has no banner'.format(member.mention)))
 
-    @commands.command(aliases=['uinfo', 'ui', 'whois'])
+    @commands.command(aliases=['uinfo', 'ui', 'userinfo'])
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
     @commands.guild_only()
-    async def userinfo(self, ctx: commands.Context, *, member: typing.Optional[discord.Member]):
+    async def whois(self, ctx: commands.Context, *, member: typing.Optional[discord.Member]):
         """
         Shows a user's information. If not specified or it fails to find it, shows your own.
         """
@@ -226,6 +218,8 @@ class utility(commands.Cog):
         except KeyError:
             is_afk = False
 
+        bamboo = self.client.bal(member.id)
+
         embed = discord.Embed(title='Showing info for {}'.format(fetched_user.name), color=member.color)   
         embed.set_thumbnail(url=member.display_avatar.url)
 
@@ -235,7 +229,7 @@ class utility(commands.Cog):
                               f"\n╰ **Discriminator:** `#{fetched_user.discriminator}`"
                               f"\n╰ **Nickname:** {(member.nick or consts.CUSTOM_TICKS[False])}"
                               f"\n╰ **Mention:** {member.mention}")
-    
+
         embed.add_field(name="<:members:658538493470965787> User Info",
                         value=f"\n╰ **Created:** {discord.utils.format_dt(member.created_at, style='f')} {discord.utils.format_dt(member.created_at, style='R')}"
                               f"\n╰ **Badges:** {flags}"
@@ -248,6 +242,7 @@ class utility(commands.Cog):
         embed.add_field(name="<:slash:782701715479724063> Other",
                         value=f"\n╰ **Backlisted:** {consts.CUSTOM_TICKS[is_blacklisted]}"
                               f"\n╰ **Afk:** {consts.CUSTOM_TICKS[is_afk]}"
+                              "\n╰ **Bamboo:** {:,} <:bamboo:911241395434565652>".format(bamboo)
                         ,inline=False)
 
         if member.premium_since:
@@ -299,7 +294,7 @@ class utility(commands.Cog):
         if guild_id and await self.client.is_owner(ctx.author):
             guild = self.client.get_guild(guild_id)
             if not guild:
-                return await ctx.send(embed=discord.Embed(title='Error occured', description="I couldn't find that server. Make sure the ID you entered was correct.", color=discord.Color.red()))
+                return await ctx.send(embed=discord.Embed(title='Something went wrong...', description="I couldn't find that server. Make sure the ID you entered was correct.", color=discord.Color.red()))
         else:
             guild = ctx.guild
 
@@ -402,7 +397,7 @@ class utility(commands.Cog):
                               f"\n╰ **Banned Members:** {bannedMembers}"
                               ,inline=False)
 
-        embed.add_field(name=f"<:rich_presence:658538493521166336> Channels ({len(guild.channels)})",
+        embed.add_field(name=f"<:channel:585783907841212418> Channels ({len(guild.channels)})",
                         value=f"\n╰ **Categories:** {len([c for c in guild.channels if isinstance(c, discord.CategoryChannel)])}"
                               f"\n╰ **Voice Channels:** {len([c for c in guild.channels if isinstance(c, discord.VoiceChannel)])}"
                               f"\n╰ **Text Channels:** {len([c for c in guild.channels if isinstance(c, discord.TextChannel)])}"
@@ -498,12 +493,12 @@ class utility(commands.Cog):
             await ctx.send(embed=embed)
 
     @commands.command()
-    async def translate(self, ctx:commands.Context, langueage:str, *,input:str):   
+    async def translate(self, ctx:commands.Context, language:str, *,input:str):   
         try:
-            translator = GoogleTranslator(source='auto', target=langueage.lower())
+            translator = GoogleTranslator(source='auto', target=language.lower())
             translated = translator.translate(input)
         except UnsupportedLanguage:
-            return await ctx.send(embed=discord.Embed(title='Error Occured', description='Please input valid langueage to translate to'))
+            return await ctx.send(embed=discord.Embed(title='Error Occured', description='Please input valid language to translate to'))
             
 
         #if translator.source == translator.target:
@@ -511,7 +506,7 @@ class utility(commands.Cog):
             
         
         embed=discord.Embed()
-        embed.add_field(name=f'Text in `{langueage.upper()}`:', value=
+        embed.add_field(name=f'Text in `{language.upper()}`:', value=
                     f"\n```fix"
                     f"\n{translated}"
                     f"\n```", inline=False)
@@ -578,4 +573,4 @@ class utility(commands.Cog):
         await ctx.send(embed=embed, view=helper.Url(final_url, label=f'Here\'s {str(obj)}', emoji='<:github:744345792172654643>'))
 
 def setup(client):
-    client.add_cog(utility(client))
+    client.add_cog(Utility(client))

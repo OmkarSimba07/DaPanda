@@ -131,10 +131,13 @@ class CustomContext(commands.Context):
     @property
     def color(self) -> discord.Color:
         """ Returns the bot's color, or the author's color"""
-        color = self.me.color if self.me.color not in (discord.Color.default(), discord.Embed.Empty, None) \
-                else self.author.color if self.author.color not in (discord.Color.default(), discord.Embed.Empty, None) \
-                else discord.Color.blurple()
-
+        if not self.bot.fixed_color:
+            color = self.me.color if self.me.color not in (discord.Color.default(), discord.Embed.Empty, None) \
+                    else self.author.color if self.author.color not in (discord.Color.default(), discord.Embed.Empty, None) \
+                    else 0xE91E63
+        else:
+            color = 0xE91E63
+        
         return color
     
     async def send(self, 
@@ -165,14 +168,14 @@ class CustomContext(commands.Context):
     async def confirm(self, message: typing.Union[str, discord.Embed],
                       buttons: typing.Tuple[typing.Union[discord.PartialEmoji, str], str, discord.ButtonStyle] = None, 
                       timeout: int = 30,
-                      delete_after_confirm: bool = False, 
-                      delete_after_timeout: bool = False,
-                      delete_after_cancel: bool = None):
+                      delete_after_confirm: bool = True, 
+                      delete_after_timeout: bool = True,
+                      delete_after_cancel: bool = True):
         
         delete_after_cancel = delete_after_cancel if delete_after_cancel is not None else delete_after_confirm
         view = Confirm(buttons=buttons or (
-            (None, 'Confirm', discord.ButtonStyle.green),
-            (None, 'Cancel', discord.ButtonStyle.red)
+            (self.tick(True), 'Yes', discord.ButtonStyle.green),
+            (self.tick(False), 'No', discord.ButtonStyle.red)
         ), timeout=timeout)
         view.ctx = self
         if isinstance(message, discord.Embed):

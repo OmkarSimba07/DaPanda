@@ -187,16 +187,16 @@ class Moderation(commands.Cog):
             raise commands.BadArgument("**delete_days** must be between 0 and 7 days")
 
         if member.id == self.client.user.id:
-            return await ctx.send(embed=discord.Embed(title='Error occured', description='You may not ban me <:rooSad:901660365773996084>'))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...', description='You may not ban me <:rooSad:901660365773996084>'))
         
         if member.guild_permissions.administrator:
-            return await ctx.send(embed=discord.Embed(title='Error occured', description='You may not ban an adminstator'))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...', description='You may not ban an adminstator'))
 
         if member.id == ctx.guild.owner.id:
-            return await ctx.send(embed=discord.Embed(title='Error occured', description='You may not ban the owner of the guild'))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...', description='You may not ban the owner of the guild'))
         
         if ctx.author.top_role < member.top_role:
-            return await ctx.send(embed=discord.Embed(title='Error occured', description='You may not ban members that have higher tier roles than you'))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...', description='You may not ban members that have higher tier roles than you'))
 
         try:
             await member.send(embed=discord.Embed(title='Banned'.format(ctx.guild.name),
@@ -234,16 +234,16 @@ class Moderation(commands.Cog):
     async def kick(self, ctx: Context, member:discord.Member, *, reason: str = 'Not specified'):
         """Kicks a member from the server"""
         if member.id == self.client.user.id:
-            return await ctx.send(embed=discord.Embed(title='Error occured', description='You may not kick me <:rooSad:901660365773996084>'))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...', description='You may not kick me <:rooSad:901660365773996084>'))
         
         if member.guild_permissions.administrator:
-            return await ctx.send(embed=discord.Embed(title='Error occured', description='You may not kick an adminstator'))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...', description='You may not kick an adminstator'))
 
         if member.id == ctx.guild.owner.id:
-            return await ctx.send(embed=discord.Embed(title='Error occured', description='You may not kick the owner of the guild'))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...', description='You may not kick the owner of the guild'))
         
         if ctx.author.top_role < member.top_role:
-            return await ctx.send(embed=discord.Embed(title='Error occured', description='You may not kick members that have higher tier roles than you'))
+            return await ctx.send(embed=discord.Embed(title='Something went wrong...', description='You may not kick members that have higher tier roles than you'))
 
         try:
             await member.send(embed=discord.Embed(title='Kicked'.format(ctx.guild.name),

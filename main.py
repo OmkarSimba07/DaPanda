@@ -1,4 +1,5 @@
 import datetime
+import time as t
 import logging
 import os
 import traceback
@@ -10,6 +11,7 @@ import topgg
 
 from discord.ext import commands
 from helpers.context import CustomContext
+from cogs.utils import time as time_
 import helpers.errors as errors
 
 from discord.ext.commands.errors import (ExtensionAlreadyLoaded, ExtensionFailed, ExtensionNotFound, NoEntryPointError)
@@ -70,15 +72,23 @@ class Main(commands.AutoShardedBot):
             return role
         else:
             return False
-
-    def uptime(self):
-        delta_uptime = datetime.datetime.utcnow() - self.start_time
-        hours, remainder = divmod(int(delta_uptime.total_seconds()), 3600)
-        minutes, seconds = divmod(remainder, 60)
-        days, hours = divmod(hours, 24)
-
-        return (f"{days:02d}:{hours:02d}:{minutes:02d}:{seconds:02d}")
     
+    def bal(self, id):
+        try:
+            bal = self.bamboos[id]
+        except KeyError:
+            bal = 0
+
+        return bal
+
+    def claimed(self, id):
+        try:
+            claimed = self.claims[id]
+        except KeyError:
+            claimed = False
+
+        return claimed
+
     def __init__(self) -> None:
         intents = discord.Intents.all()
 
@@ -87,7 +97,7 @@ class Main(commands.AutoShardedBot):
             slash_commands=True,
             intents=intents,
             case_insensitive=True,
-            activity=discord.Activity(type=discord.ActivityType.streaming, name='/help', url='https://www.youtube.com/watch?v=dQw4w9WgXcQ'),  
+            activity=discord.Activity(type=discord.ActivityType.listening, name='dapanda.xyz'),  
             status=discord.Status.online,
             shard_count=3
         )
@@ -104,14 +114,14 @@ class Main(commands.AutoShardedBot):
         self._BotBase__cogs = commands.core._CaseInsensitiveDict() 
         self.start_time = datetime.datetime.utcnow()
         self.pomice = pomice.NodePool()
-        self._topgg = topgg.DBLClient(self, os.getenv('TOPGG_TOKEN'))
-        self._topgg_webhook = topgg.WebhookManager(self).dbl_webhook(os.getenv('TOPGG_HOOK_URL'), os.getenv('TOPGG_PASSWORD'))
-
-
+        self._topgg = topgg.DBLClient(self, os.getenv('TOPGG_TOKEN'), autopost=True, post_shard_count=True)
+        self._topgg_webhook = topgg.WebhookManager(self).dbl_webhook('/topgg', os.getenv('TOPGG_PASSWORD'))
+        
+        self.fixed_color = True
         self.noprefix = False
         self.started = False
         self.maintenance = False
-       
+
         self.owner_id = 383946213629624322
         self.user_id = 786550035952173107
 
@@ -128,6 +138,10 @@ class Main(commands.AutoShardedBot):
         self.auto_un_afk = {}
         self.dj_modes = {}
         self.dj_roles = {}
+        self.bamboos = {}
+        self.claims = {}
+        self.dailys = {}
+        self.monthlys = {}
 
         self.ignored_cogs = ['dev', 'Jishaku', 'error_handler', 'event_handler', 'mail']
         
@@ -172,8 +186,11 @@ class Main(commands.AutoShardedBot):
         logging.info(' ')
         logging.info("=======[ BOT IS READY! ]=======")
         logging.info("=======[ USER: {} ]=======".format(self.user.name))
-        self._topgg_webhook.run(5000)
         if not self.started:
+            
+            await self._topgg_webhook.run(5000)
+            os.system("sudo systemctl restart web")
+            
             self.started = True
             try:
                 logging.info(' ')
@@ -193,7 +210,6 @@ class Main(commands.AutoShardedBot):
                 logging.info('Successfully loadeded node with identifier: {}'.format(os.getenv('LAVALINK_IDENTIFIER')))
 
             values = await self.db.fetch("SELECT guild_id, prefix FROM guilds")
-
             for value in values:
                 if value['prefix']:
                     self.prefixes[value['guild_id']] = (
@@ -210,6 +226,21 @@ class Main(commands.AutoShardedBot):
             for value in values:
                 self.blacklist[value['user_id']] = (value['is_blacklisted'] or False)
 
+            values = await self.db.fetch("SELECT user_id, amount FROM economy")
+            for value in values:
+                self.bamboos[value['user_id']] = (value['amount'] or 0)
+
+            values = await self.db.fetch("SELECT user_id, claimed FROM economy")
+            for value in values:
+                self.claims[value['user_id']] = (value['claimed'] or False)
+
+            values = await self.db.fetch("SELECT user_id, daily FROM economy")
+            for value in values:
+                self.dailys[value['user_id']] = (value['daily'] or 0)
+
+            values = await self.db.fetch("SELECT user_id, monthly FROM economy")
+            for value in values:
+                self.monthlys[value['user_id']] = (value['monthly'] or 0)
 
             self.afk_users = dict([(r['user_id'], True) for r in (await self.db.fetch('SELECT user_id, start_time FROM afk')) if r['start_time']])
             self.auto_un_afk = dict([(r['user_id'], r['auto_un_afk']) for r in (await self.db.fetch('SELECT user_id, auto_un_afk FROM afk')) if r['auto_un_afk'] is not None])
@@ -221,6 +252,26 @@ class Main(commands.AutoShardedBot):
             values = await self.db.fetch("SELECT guild_id, dj_role_id FROM music")
             for value in values:
                 self.dj_roles[value['guild_id']] = (value['dj_role_id'] or False)
+
+            if os.path.exists("system-logs/last-reboot.log"):
+                f = open("system-logs/last-reboot.log", "r")
+                channel_id = int(f.readline())
+                f.close()
+                
+                delay = t.time() - os.path.getctime('system-logs/last-reboot.log')
+        
+                if delay > 60:
+                    embed = discord.Embed(title='Reboot successful', 
+                                        description='Took me `{}` seconds to reboot'.format(round(delay, 2)),
+                                        color=discord.Color.green())
+                else:
+                    embed = discord.Embed(title='Reboot failed', 
+                                        description='Took me `{}` seconds to reboot'.format(round(delay, 2)),
+                                        color=discord.Color.red())
+                
+                await self.get_channel(channel_id).send(embed=embed)
+
+
 
     async def get_context(self, message, *, cls=CustomContext):
         return await super().get_context(message, cls=cls)
@@ -244,6 +295,9 @@ class Main(commands.AutoShardedBot):
         return commands.when_mentioned_or(*prefix)(bot, message) if not raw_prefix else prefix
 
     async def on_message(self, message: discord.Message) -> Optional[discord.Message]:
+        if message.author.bot:
+            return
+            
         if self.user:
             if message.content == f'<@!{self.user.id}>':  # Sets faster
                 prefixes = await self.get_pre(self, message, raw_prefix=True)
@@ -253,4 +307,5 @@ class Main(commands.AutoShardedBot):
                     embed.description += f', `{prefix}`'
                 ctx = await self.get_context(message)
                 return await ctx.send(embed=embed)
+        
         await self.process_commands(message)
