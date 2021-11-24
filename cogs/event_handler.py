@@ -30,7 +30,7 @@ class Event_Handler(commands.Cog):
         if data["isWeekend"]:
             amount = 600
         else:
-            amount = 120
+            amount = 1200
 
         embed = discord.Embed(title='Received vote', color=discord.Color.green())
         if user.avatar:

@@ -123,34 +123,34 @@ class dev(commands.Cog, command_attrs=dict(slash_command=False)):
 
         for filename in os.listdir("./cogs"):
             if filename.endswith(".py"):
-                cogs_list = f"{cogs_list} \n<a:windows_loading:636549313492680706> {filename[:-3]}"
+                cogs_list = f"{cogs_list} \n<a:windows_loading:636549313492680706> ︱ **Loading** - {filename[:-3]}"
 
-        embed = discord.Embed(color=ctx.me.color, description=cogs_list)
+        embed = discord.Embed(color=ctx.color, description=cogs_list)
         message = await ctx.send(embed=embed)
 
         for filename in os.listdir("./cogs"):
             if filename.endswith(".py"):
                 try:
                     self.client.reload_extension("cogs.{}".format(filename[:-3]))
-                    to_send = f"{to_send} \n<a:Yes:889079191566422027> {filename[:-3]}"
+                    to_send = f"{to_send} \n{ctx.tick(True)} ︱ **Loaded** - {filename[:-3]}"
                 except Exception:
                     first_reload_failed_extensions.append(filename)
 
         for filename in first_reload_failed_extensions:
             try:
                 self.client.reload_extension("cogs.{}".format(filename[:-3]))
-                to_send = f"{to_send} \n<a:Yes:889079191566422027> {filename[:-3]}"
+                to_send = f"{to_send} \n{ctx.tick(True)} ︱ **Loaded** - {filename[:-3]}"
 
             except discord.ext.commands.ExtensionNotLoaded:
-                to_send = f"{to_send} \n<a:No:889079913498415134> {filename[:-3]} - Not loaded"
+                to_send = f"{to_send} \n{ctx.tick(False)} ︱ **Not loaded** - {filename[:-3]}"
             except discord.ext.commands.ExtensionNotFound:
-                to_send = f"{to_send} \n<a:No:889079913498415134> {filename[:-3]} - Not found"
+                to_send = f"{to_send} \n{ctx.tick(False)} ︱ **Not found** - {filename[:-3]}"
             except discord.ext.commands.NoEntryPointError:
-                to_send = f"{to_send} \n<a:No:889079913498415134> {filename[:-3]} - No setup func"
+                to_send = f"{to_send} \n{ctx.tick(False)} ︱ **No setup funcion** - {filename[:-3]}"
             except discord.ext.commands.ExtensionFailed as e:
                 traceback_string = "".join(traceback.format_exception(etype=None, value=e, tb=e.__traceback__))
-                to_send = f"{to_send} \n<a:No:889079913498415134> {filename[:-3]} - Execution error"
-                embed_error = f"\n<a:No:889079913498415134> {filename[:-3]} Execution error - Traceback" \
+                to_send = f"{to_send} \n{ctx.tick(False)} ︱ **Execution error** - {filename[:-3]}"
+                embed_error = f"\n{ctx.tick(False)} ︱ **Execution error - Traceback** - " \
                               f"\n```py\n{traceback_string}\n```"
                 if not silent:
                     target = ctx if channel else ctx.author
@@ -161,7 +161,7 @@ class dev(commands.Cog, command_attrs=dict(slash_command=False)):
 
                 err = True
 
-        await asyncio.sleep(0.4)
+        await asyncio.sleep(0.5)
         if err:
             if not silent:
                 if not channel:
@@ -170,10 +170,10 @@ class dev(commands.Cog, command_attrs=dict(slash_command=False)):
                     to_send = f"{to_send} \n\n📬 Sent all tracebacks here."
             if silent:
                 to_send = f"{to_send} \n\n📭 silent, no tracebacks sent."
-            embed = discord.Embed( title='Reloaded some extensions', description=to_send, color=ctx.color)
+            embed = discord.Embed( title='Some extensions reloaded successfully', description=to_send, color=ctx.color)
             await message.edit(embed=embed)
         else:
-            embed = discord.Embed(title='Reloaded all extensions', description=to_send, color=ctx.color)
+            embed = discord.Embed(title='All extensions reloaded successfully', description=to_send, color=ctx.color)
             await message.edit(embed=embed)
 
     @commands.command(pass_context=True, hidden=True, aliases=['e'])

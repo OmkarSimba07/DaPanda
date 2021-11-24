@@ -506,7 +506,7 @@ class Utility(commands.Cog):
             
         
         embed=discord.Embed()
-        embed.add_field(name=f'Text in `{language.upper()}`:', value=
+        embed.add_field(name=f'Text in `{language.capitalize() if len(language) != 2 else language.upper()}`:', value=
                     f"\n```fix"
                     f"\n{translated}"
                     f"\n```", inline=False)
@@ -523,7 +523,7 @@ class Utility(commands.Cog):
         global obj
         source_url = 'https://github.com/MiroslavRosenov/DaPanda'
         branch = 'master'
-        license_url = f'{source_url}/blob/{branch}/LICENSE'
+        license_url = f'{source_url}/blob/{branch}/LICENCE'
         mpl_advice = f'**This code is licensed under [MPL]({license_url})**' \
                      f'\nRemember that you must use the ' \
                      f'\nsame license! [[read more]]({license_url}#L160-L168)'
@@ -550,8 +550,7 @@ class Utility(commands.Cog):
                     url='https://image.prntscr.com/image/BMmJV90XTwmmeD91diWlaQ.png')
                 return await ctx.send(embed=embed,
                                       view=helper.Url(source_url, label='Open on GitHub', emoji='<:github:744345792172654643>'),
-                                      footer=False)
-
+                                      footer=False)                      
             src = obj.callback.__code__
             module = obj.callback.__module__
             filename = src.co_filename
@@ -567,9 +566,17 @@ class Utility(commands.Cog):
 
         final_url = f'{source_url}/blob/{branch}/{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}'
         
-        embed = discord.Embed(title=f'Here\'s `{str(obj)}`', description=mpl_advice)
+        embed = discord.Embed(title=f'Here\'s `{str(obj)}`')
+        embed.description = mpl_advice
         embed.set_image(url='https://image.prntscr.com/image/BMmJV90XTwmmeD91diWlaQ.png')
         embed.set_footer(text=f"{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}")
+
+        if obj.cog.qualified_name == 'Music':
+            embed.add_field(name='Attention ⚠️', value = (
+                "Please understand Music bots are complex,"
+                "and this code can be daunting to a beginner."
+            ))
+
         await ctx.send(embed=embed, view=helper.Url(final_url, label=f'Here\'s {str(obj)}', emoji='<:github:744345792172654643>'))
 
 def setup(client):

@@ -141,7 +141,7 @@ class Main(commands.AutoShardedBot):
         self.bamboos = {}
         self.claims = {}
         self.dailys = {}
-        self.monthlys = {}
+        self.weeklys = {}
 
         self.ignored_cogs = ['dev', 'Jishaku', 'error_handler', 'event_handler', 'mail']
         
@@ -156,6 +156,7 @@ class Main(commands.AutoShardedBot):
             
             else:
                 os.environ["JISHAKU_FORCE_PAGINATOR"] = "True"
+                self.get_command("jsk").hidden = True
                 logging.info(f'Successfully loaded: {ext}')
                 logging.info(' ')
         self._dynamic_cogs()
@@ -173,7 +174,7 @@ class Main(commands.AutoShardedBot):
                 try:
                     logging.info(f"Trying to load cog: {cog}")
                     self._load_extension(f'cogs.{cog}') 
-                except (ExtensionNotFound, ExtensionAlreadyLoaded, NoEntryPointError, ExtensionFailed):
+                except:
                     logging.critical("================[ ERROR ]================")
                     logging.critical(f"An error occurred while loading: {cog}")
                     logging.critical(' ')
@@ -187,9 +188,8 @@ class Main(commands.AutoShardedBot):
         logging.info("=======[ BOT IS READY! ]=======")
         logging.info("=======[ USER: {} ]=======".format(self.user.name))
         if not self.started:
-            
-            await self._topgg_webhook.run(5000)
             os.system("sudo systemctl restart web")
+            await self._topgg_webhook.run(5000)
             
             self.started = True
             try:
@@ -236,11 +236,11 @@ class Main(commands.AutoShardedBot):
 
             values = await self.db.fetch("SELECT user_id, daily FROM economy")
             for value in values:
-                self.dailys[value['user_id']] = (value['daily'] or 0)
+                self.dailys[value['user_id']] = (value['daily'] or datetime.datetime.utcnow())
 
-            values = await self.db.fetch("SELECT user_id, monthly FROM economy")
+            values = await self.db.fetch("SELECT user_id, weekly FROM economy")
             for value in values:
-                self.monthlys[value['user_id']] = (value['monthly'] or 0)
+                self.weeklys[value['user_id']] = (value['weekly'] or datetime.datetime.utcnow())
 
             self.afk_users = dict([(r['user_id'], True) for r in (await self.db.fetch('SELECT user_id, start_time FROM afk')) if r['start_time']])
             self.auto_un_afk = dict([(r['user_id'], r['auto_un_afk']) for r in (await self.db.fetch('SELECT user_id, auto_un_afk FROM afk')) if r['auto_un_afk'] is not None])
@@ -259,19 +259,20 @@ class Main(commands.AutoShardedBot):
                 f.close()
                 
                 delay = t.time() - os.path.getctime('system-logs/last-reboot.log')
-        
+
+                if delay > 120:
+                    return
+
                 if delay > 60:
+                    embed = discord.Embed(title='Reboot took longed that usual', 
+                                        description='Took me `{}` seconds to reboot'.format(round(delay, 2)),
+                                        color=discord.Color.orange())
+                else:
                     embed = discord.Embed(title='Reboot successful', 
                                         description='Took me `{}` seconds to reboot'.format(round(delay, 2)),
                                         color=discord.Color.green())
-                else:
-                    embed = discord.Embed(title='Reboot failed', 
-                                        description='Took me `{}` seconds to reboot'.format(round(delay, 2)),
-                                        color=discord.Color.red())
                 
                 await self.get_channel(channel_id).send(embed=embed)
-
-
 
     async def get_context(self, message, *, cls=CustomContext):
         return await super().get_context(message, cls=cls)

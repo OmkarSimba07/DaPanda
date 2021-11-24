@@ -1,11 +1,11 @@
 import asyncio
-import logging
 import discord
 import typing
 import random
 
+from datetime import datetime, timedelta, time
 from discord.ext import commands
-from .utils import time as time
+from .utils import time as t
 from helpers import helper
 from helpers.context import CustomContext as Context
 import helpers.paginator as paginator
@@ -16,10 +16,27 @@ class Economy(commands.Cog):
         self.client = client
     
     class Claim(discord.ui.View):
-        def __init__(self):
+        def __init__(self, ctx:Context):
             super().__init__()
-            self.add_item(discord.ui.Button(label='Claim up to 1200 Bamboo', emoji='<:bamboo:911241395434565652>', style=discord.ButtonStyle.blurple))
+            self.add_item(discord.ui.Button(label='Claim up to 1200 Bamboo', emoji='<:bamboo:911241395434565652>', style=discord.ButtonStyle.blurple, url=ctx.bot.vote_url))
+    
+    def daily_cd(self) -> datetime:
+        """Calculate datetime until midnight"""
+        now = datetime.utcnow()
+        date = datetime.combine(now + timedelta(days=1), time())
         
+        return date
+
+    def weekly_cd(self, weekday:int) -> datetime:
+        """Calculate datetime until X day"""
+        now = datetime.utcnow()
+        days = weekday - now.weekday()
+        if days <= 0: # Target day already happened this week
+            days += 7
+        date = datetime.combine(now + timedelta(days), time())
+        
+        return date
+
     @commands.command(aliases=['bal'])
     async def balance(self, ctx: Context, member:typing.Optional[discord.Member]):
         if not member:
@@ -28,7 +45,7 @@ class Economy(commands.Cog):
         embed = discord.Embed(title="Showing balance for {}".format(member))
         embed.description = "{}'s current balance is **{:,}** <:bamboo:911241395434565652>".format(member.mention, self.client.bal(member.id))
         
-        await ctx.send(embed=embed, view=self.Claim())
+        await ctx.send(embed=embed, view=self.Claim(ctx))
 
     @commands.command(aliases=['give'])
     async def send(self, ctx: Context, member:discord.Member, amount:int):
@@ -64,30 +81,29 @@ class Economy(commands.Cog):
         embed.description = 'Are you sure you want to send **{:,}** to `{}` ?'.format(amount, member)
 
         confirm = await ctx.confirm(embed)
-        if confirm:
-            await self.client.db.execute(
-                    "INSERT INTO economy(user_id, amount) VALUES ($1, $2) "
-                    "ON CONFLICT (user_id) DO UPDATE SET amount= $2",
-                    member.id, member_bal + amount)
-            self.client.bamboos[member.id] = self.client.bal(member.id) + amount
-            
-            await self.client.db.execute(
-                    "INSERT INTO economy(user_id, amount) VALUES ($1, $2) "
-                    "ON CONFLICT (user_id) DO UPDATE SET amount= $2",
-                    ctx.author.id, author_bal - amount)
-            self.client.bamboos[ctx.author.id] =  self.client.bal(ctx.author.id) - amount
-            
-
-            embed=discord.Embed(title='Bamboo sent')
-            embed.description = 'Successfully sent send **{:,}** <:bamboo:911241395434565652> to `{}` !'.format(amount, member)
-            await ctx.send(embed=embed)
-        
-        else:
+        if not confirm:
             return
 
+        await self.client.db.execute(
+                "INSERT INTO economy(user_id, amount) VALUES ($1, $2) "
+                "ON CONFLICT (user_id) DO UPDATE SET amount= $2",
+                member.id, member_bal + amount)
+        self.client.bamboos[member.id] = self.client.bal(member.id) + amount
+        
+        await self.client.db.execute(
+                "INSERT INTO economy(user_id, amount) VALUES ($1, $2) "
+                "ON CONFLICT (user_id) DO UPDATE SET amount= $2",
+                ctx.author.id, author_bal - amount)
+        self.client.bamboos[ctx.author.id] =  self.client.bal(ctx.author.id) - amount
+        
+
+        embed=discord.Embed(title='Bamboo sent')
+        embed.description = 'Successfully sent send **{:,}** <:bamboo:911241395434565652> to `{}` !'.format(amount, member)
+        await ctx.send(embed=embed)
+
     @commands.command(aliases=['donate'])
-    async def giveaway(self, ctx: Context, amount:int):
-        member = random.choice(ctx.guild.members)
+    async def drop(self, ctx: Context, amount:int):
+        member = random.choice([m for m in ctx.guild.members if not m.bot])
 
         author_bal = self.client.bal(ctx.author.id)
         member_bal = self.client.bal(member.id)
@@ -104,7 +120,7 @@ class Economy(commands.Cog):
         
         if amount < 200:
             embed = discord.Embed(title="Something went wrong...", color=discord.Color.red())
-            embed.description = "My minimum amount of <:bamboo:911241395434565652> that you can send is **200**"
+            embed.description = "My minimum amount of <:bamboo:911241395434565652> that you can drop is **200**"
             return await ctx.send(embed=embed)
 
         if amount > 9223372036854775807:
@@ -121,27 +137,26 @@ class Economy(commands.Cog):
         embed.description = 'Are you sure you want to send **{:,}** to a random member of {} ?'.format(amount, ctx.guild)
 
         confirm = await ctx.confirm(embed)
-        if confirm:
-            await self.client.db.execute(
-                    "INSERT INTO economy(user_id, amount) VALUES ($1, $2) "
-                    "ON CONFLICT (user_id) DO UPDATE SET amount= $2",
-                    member.id, member_bal + amount)
-            self.client.bamboos[member.id] = self.client.bal(member.id) + amount
-
-            
-            await self.client.db.execute(
-                    "INSERT INTO economy(user_id, amount) VALUES ($1, $2) "
-                    "ON CONFLICT (user_id) DO UPDATE SET amount= $2",
-                    ctx.author.id, author_bal - amount)
-            self.client.bamboos[ctx.author.id] =  self.client.bal(ctx.author.id) - amount
-            
-
-            embed=discord.Embed(title='Bamboo sent')
-            embed.description = 'Successfully sent send **{:,}** <:bamboo:911241395434565652> to {} !'.format(amount, member)
-            await ctx.send(embed=embed)
-        
-        else:
+        if not confirm:
             return
+
+        await self.client.db.execute(
+                "INSERT INTO economy(user_id, amount) VALUES ($1, $2) "
+                "ON CONFLICT (user_id) DO UPDATE SET amount= $2",
+                member.id, member_bal + amount)
+        self.client.bamboos[member.id] = self.client.bal(member.id) + amount
+
+        
+        await self.client.db.execute(
+                "INSERT INTO economy(user_id, amount) VALUES ($1, $2) "
+                "ON CONFLICT (user_id) DO UPDATE SET amount= $2",
+                ctx.author.id, author_bal - amount)
+        self.client.bamboos[ctx.author.id] =  self.client.bal(ctx.author.id) - amount
+        
+
+        embed=discord.Embed(title='Bamboo sent')
+        embed.description = 'Successfully sent send **{:,}** <:bamboo:911241395434565652> to {} !'.format(amount, member.mention)
+        await ctx.send(embed=embed)
 
     @commands.command(aliases=['top'])
     async def leaderboard(self, ctx: Context):
@@ -225,26 +240,28 @@ class Economy(commands.Cog):
 
         if not claimed:
             embed=discord.Embed(title='Please confirm your actions')
-            embed.description = 'Are you sure you to claim **2,000** <:bamboo:911241395434565652> ?'
+            embed.description = 'Are you sure you to claim **5,000** <:bamboo:911241395434565652> ?'
             embed.set_footer(text='Remember that this can be done once !')
 
             confirm = await ctx.confirm(embed)
-            if confirm:
-                await self.client.db.execute(
-                    "INSERT INTO economy(user_id, amount, claimed) VALUES ($1, $2, $3) "
-                    "ON CONFLICT (user_id) DO UPDATE SET amount=$2, claimed= $3",
-                    ctx.author.id, author_bal + 2000, True)
-                
-                self.client.bamboos[ctx.author.id] = self.client.bal(ctx.author.id) + 2000
-                self.client.claims[ctx.author.id] = True
+            if not confirm:
+                return
 
-                embed = discord.Embed(title="Successfuly claimed your one time", color=discord.Color.green())
-                embed.description = "You've received **2,000** <:bamboo:911241395434565652>, spend it well !"
-                return await ctx.send(embed=embed)
+            await self.client.db.execute(
+                "INSERT INTO economy(user_id, amount, claimed) VALUES ($1, $2, $3) "
+                "ON CONFLICT (user_id) DO UPDATE SET amount=$2, claimed= $3",
+                ctx.author.id, author_bal + 5000, True)
+            
+            self.client.bamboos[ctx.author.id] = self.client.bal(ctx.author.id) + 5000
+            self.client.claims[ctx.author.id] = True
+
+            embed = discord.Embed(title="Successfully claimed your one time", color=discord.Color.green())
+            embed.description = "You've received **5,000** <:bamboo:911241395434565652>, spend it well !"
+            return await ctx.send(embed=embed)
         
         else:
             embed = discord.Embed(title="Something went wrong...", color=discord.Color.red())
-            embed.description = "You've already claimed your bonus of **2,000** <:bamboo:911241395434565652>"
+            embed.description = "You've already claimed your bonus of **5,000** <:bamboo:911241395434565652>"
             return await ctx.send(embed=embed)
 
     @commands.max_concurrency(1, commands.BucketType.user)
@@ -258,14 +275,14 @@ class Economy(commands.Cog):
             embed.description = "My minimum amount of <:bamboo:911241395434565652> that you can bet is **10**"
             return await ctx.send(embed=embed)
 
-        if  amount * 25 + author_bal> 9223372036854775807:
-            embed = discord.Embed(title="Something went wrong...", color=discord.Color.red())
-            embed.description = "My maximum amount of <:bamboo:911241395434565652> that you can have is **9,223,372,036,854,775,807**. That means that if you win this route, you will exceed this limit"
-            return await ctx.send(embed=embed)
-
         if amount > author_bal:
             embed = discord.Embed(title="Something went wrong...", color=discord.Color.red())
             embed.description = "You can't afford to do that !"
+            return await ctx.send(embed=embed)
+
+        if  amount * 25 + author_bal> 9223372036854775807:
+            embed = discord.Embed(title="Something went wrong...", color=discord.Color.red())
+            embed.description = "My maximum amount of <:bamboo:911241395434565652> that you can have is **9,223,372,036,854,775,807**. That means that if you win this route, you will exceed this limit"
             return await ctx.send(embed=embed)
 
         if amount > 0:
@@ -308,7 +325,7 @@ class Economy(commands.Cog):
         elif len(set(slots)) != len(slots):
             color = discord.Color.green()
             if amount != 0:
-                outcome = int(amount * 1.25)
+                outcome = int(amount * 0.25)
                 await self.client.db.execute(
                                 "INSERT INTO economy(user_id, amount) VALUES ($1, $2) "
                                 "ON CONFLICT (user_id) DO UPDATE SET amount= $2",
@@ -329,10 +346,10 @@ class Economy(commands.Cog):
                                 "ON CONFLICT (user_id) DO UPDATE SET amount= $2",
                                 ctx.author.id, self.client.bal(ctx.author.id) + outcome)
                 self.client.bamboos[ctx.author.id] =  self.client.bal(ctx.author.id) + outcome
-                url = "https://fakeimg.pl/1040x200/F1C40F/000000/?retina=1&text=You%20got%20FRUIT%20COMBO,%20your%20bet%20is%20multiplied%20by%205X%20!"
+                url = "https://fakeimg.pl/1040x200/FEE75C/000000/?retina=1&text=You%20got%20FRUIT%20COMBO,%20your%20bet%20is%20multiplied%20by%205X%20!"
             
             else:
-                url = "https://fakeimg.pl/1040x200/F1C40F/000000/?retina=1&text=You%20got%20FRUIT%20COMBO%20!"
+                url = "https://fakeimg.pl/1040x200/FEE75C/000000/?retina=1&text=You%20got%20FRUIT%20COMBO%20!"
 
         elif sorted(slots) == sorted(heist):
             color = discord.Color.yellow()
@@ -344,10 +361,10 @@ class Economy(commands.Cog):
                                 "ON CONFLICT (user_id) DO UPDATE SET amount= $2",
                                 ctx.author.id, self.client.bal(ctx.author.id) + outcome)
                 self.client.bamboos[ctx.author.id] =  self.client.bal(ctx.author.id) + outcome 
-                url = "https://fakeimg.pl/1040x200/F1C40F/000000/?retina=1&text=You%20got%20HEIST%20COMBO,%20your%20bet%20is%20multiplied%20by%205X%20!"
+                url = "https://fakeimg.pl/1040x200/FEE75C/000000/?retina=1&text=You%20got%20HEIST%20COMBO,%20your%20bet%20is%20multiplied%20by%205X%20!"
             
             else:
-                url = "https://fakeimg.pl/1040x200/F1C40F/000000/?retina=1&text=You%20got%20HEIST%20COMBO%20!"
+                url = "https://fakeimg.pl/1040x200/FEE75C/000000/?retina=1&text=You%20got%20HEIST%20COMBO%20!"
 
         else:
             color = discord.Color.red()
@@ -384,7 +401,90 @@ class Economy(commands.Cog):
             embed.add_field(name='Your balance', value="**{:,}** <:bamboo:911241395434565652>".format(self.client.bal(ctx.author.id)))
         
         await message.edit(embed=embed)
+    
+    @commands.is_owner()
+    @commands.command()
+    async def set(self, ctx:Context, member:discord.Member, amount:int):
+        embed=discord.Embed(title='Please confirm your actions')
+        embed.description = "Are you sure you to set {}'s <:bamboo:911241395434565652> to **{:,}** ?".format(member.mention, amount)
+
+        confirm = await ctx.confirm(embed)
+        if not confirm:
+            return
         
+        member_bal = self.client.bal(member.id)
+        await self.client.db.execute(
+                "INSERT INTO economy(user_id, amount) VALUES ($1, $2) "
+                "ON CONFLICT (user_id) DO UPDATE SET amount= $2",
+                member.id, member_bal + amount)
+        self.client.bamboos[member.id] = self.client.bal(member.id) + amount
+
+        await ctx.message.add_reaction(ctx.tick(True))
+
+    @commands.command()
+    async def daily(self, ctx:Context):
+        author_bal = self.client.bal(ctx.author.id)
+        now = datetime.utcnow()
+        
+        try:
+            cooldown = self.client.dailys[ctx.author.id]
+        except KeyError:
+            cooldown = now
+        
+        if cooldown > now:
+            next = t.human_timedelta(cooldown, accuracy=2)
+            
+            embed = discord.Embed(title='Try again later', color=discord.Color.red())
+            embed.description = f"You've already claimed your daily bonus of <:bamboo:911241395434565652>, \nplease try again in `{next}`"
+            await ctx.send(embed=embed)
+
+        else:
+            delay = self.daily_cd()
+            
+            await self.client.db.execute(
+                "INSERT INTO economy(user_id, amount, daily) VALUES ($1, $2, $3) "
+                "ON CONFLICT (user_id) DO UPDATE SET amount = $2, daily = $3",
+                ctx.author.id, author_bal + 1000, delay)
+           
+            self.client.dailys[ctx.author.id] = delay
+            self.client.bamboos[ctx.author.id] = author_bal + 1000
+
+            embed = discord.Embed(title='Daily bonus claimed')
+            embed.description = "You've received **1,000** <:bamboo:911241395434565652>, come again tomorrow for more !"
+            await ctx.send(embed=embed)
+
+    @commands.command()
+    async def weekly(self, ctx:Context):
+        author_bal = self.client.bal(ctx.author.id)
+        now = datetime.utcnow()
+        
+        try:
+            cooldown = self.client.weeklys[ctx.author.id]
+        except KeyError:
+            cooldown = now
+
+        if cooldown > now:
+            next = t.human_timedelta(cooldown)
+            
+            embed = discord.Embed(title='Try again later', color=discord.Color.red())
+            embed.description = f"You've already claimed your weekly bonus of <:bamboo:911241395434565652>, \nplease try again in `{next}`"
+            await ctx.send(embed=embed)
+
+        else:
+            delay = self.weekly_cd(0)
+            
+            await self.client.db.execute(
+                "INSERT INTO economy(user_id, amount, weekly) VALUES ($1, $2, $3) "
+                "ON CONFLICT (user_id) DO UPDATE SET amount = $2, weekly = $3",
+                ctx.author.id, author_bal + 2500, delay)
+            
+            self.client.weeklys[ctx.author.id] = delay
+            self.client.bamboos[ctx.author.id] = author_bal + 2500
+
+            embed = discord.Embed(title='Weekly bonus claimed')
+            embed.description = "You've received **2,500** <:bamboo:911241395434565652>, come again next week for more !"
+            await ctx.send(embed=embed)
+
 
 def setup(client):
     client.add_cog(Economy(client))
