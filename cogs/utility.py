@@ -347,13 +347,13 @@ class Utility(commands.Cog):
 
         embed = discord.Embed(title=guild.name)
         embed.add_field(name="ℹ️ General information:",
-                        value=f"\n╰ **ID:** `{guild.id}`"
-                              f"\n╰ **Owner:** `{guild.owner}`"
-                              f"\n╰ **Explicit content filter:** {explictContentFilter}"
-                              f"\n╰ **Filesize limit:** {helper.convert_bytes(guild.filesize_limit)}"
-                              f"\n╰ **Created:** {discord.utils.format_dt(guild.created_at, style='f')} ({discord.utils.format_dt(guild.created_at, style='R')})"
-                              f"\n╰ **Verification level:** {verificationEmote} ({verification_level})"
-                              f"\n╰ **Region:** {helper.get_server_region_emote(guild)} ({str(helper.get_server_region(guild))})",
+                        value=f"\n<:replies:912951682911072318> **ID:** `{guild.id}`"
+                              f"\n<:replies:912951682911072318> **Owner:** `{guild.owner}`"
+                              f"\n<:replies:912951682911072318> **Explicit content filter:** {explictContentFilter}"
+                              f"\n<:replies:912951682911072318> **Filesize limit:** {helper.convert_bytes(guild.filesize_limit)}"
+                              f"\n<:replies:912951682911072318> **Created:** {discord.utils.format_dt(guild.created_at, style='f')} ({discord.utils.format_dt(guild.created_at, style='R')})"
+                              f"\n<:replies:912951682911072318> **Verification level:** {verificationEmote} ({verification_level})"
+                              f"\n<:reply:912951694051139615> **Region:** {helper.get_server_region_emote(guild)} ({str(helper.get_server_region(guild))})",
                               inline=True)
         if guild.icon:
             embed.set_thumbnail(url=guild.icon.url)
